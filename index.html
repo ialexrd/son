@@ -287,20 +287,55 @@ td.date{color:var(--ink);font-weight:600}
 
   clearForm(); render();
 
+  // ---------- Firebase (Firestore)
+  const FB_VER='10.12.2';
+  const FB_CFG={
+    apiKey:"AIzaSyBTOtYHZrgR9FJHawxqjoKqZgsPkrJlL6c",
+    authDomain:"vife-3a133.firebaseapp.com",
+    projectId:"vife-3a133",
+    storageBucket:"vife-3a133.firebasestorage.app",
+    messagingSenderId:"387723819873",
+    appId:"1:387723819873:web:9a18f582de6034f2472320"
+  };
+  const MIGRATED=LS+'-migrated-to-firebase';
+  async function firebaseStore(){
+    const base='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
+    const {initializeApp}=await import(base+'firebase-app.js');
+    const fs=await import(base+'firebase-firestore.js');
+    const db=fs.getFirestore(initializeApp(FB_CFG));
+    return {collection:name=>({
+      doc:id=>({set:v=>fs.setDoc(fs.doc(db,name,id),v),delete:()=>fs.deleteDoc(fs.doc(db,name,id))}),
+      onSnapshot:(ok,err)=>fs.onSnapshot(fs.collection(db,name),s=>ok({docs:s.docs.map(d=>({data:()=>d.data()}))}),err)
+    })};
+  }
+  // Records saved earlier only in this browser are uploaded once; the browser copy is kept untouched.
+  async function migrateLocal(db,inDb){
+    try{ if(localStorage.getItem(MIGRATED)) return }catch(e){return}
+    const local=lsLoad(), todo=Object.values(local).filter(v=>v&&v.date&&!inDb[v.date]);
+    for(const v of todo) await db.collection('nights').doc(v.date).set(v);
+    try{localStorage.setItem(MIGRATED,new Date().toISOString())}catch(e){}
+  }
+
   (async()=>{
     let db=null;
-    try{ db=window.claude&&window.claude.use?await window.claude.use('db'):null }catch(e){db=null}
+    try{ db=await firebaseStore() }catch(e){db=null}
+    if(!db){ try{ db=window.claude&&window.claude.use?await window.claude.use('db'):null }catch(e){db=null} }
     if(!db){
       entries=lsLoad(); render();
       $('status').innerHTML='Сохраняется <b>только в этом браузере</b>';
       return;
     }
     store=db;
-    $('status').innerHTML='Сохраняется <b>в твоём аккаунте</b>';
+    $('status').innerHTML='Сохраняется <b>в общей базе</b>';
+    let first=true;
     db.collection('nights').onSnapshot(snap=>{
       const next={}; snap.docs.forEach(d=>{const v=d.data(); if(v&&v.date) next[v.date]=v});
       entries=next; render();
-    },err=>{$('status').textContent='Связь с хранилищем потеряна — обнови страницу.'});
+      if(first){first=false; migrateLocal(db,next).catch(()=>{$('status').textContent='Не удалось перенести старые записи из браузера — обнови страницу.'})}
+    },err=>{
+      store=null; entries=lsLoad(); render();
+      $('status').innerHTML='Нет связи с базой — показаны записи <b>из этого браузера</b>';
+    });
   })();
 })();
 </script>
