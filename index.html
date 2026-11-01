@@ -222,7 +222,7 @@ td.date{color:var(--ink);font-weight:600}
     </header>
     <section aria-labelledby="hwAddTitle" style="display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-        <h2 id="hwAddTitle">Добавить</h2>
+        <h2 id="hwAddTitle">Добавить имя</h2>
         <span class="status" id="hwStatus">Подключаю хранилище…</span>
       </div>
       <form class="addrow" id="hwForm" novalidate>
@@ -429,74 +429,127 @@ td.date{color:var(--ink);font-weight:600}
   try{const s=localStorage.getItem(TK); if(s&&$(s)) show(s)}catch(e){}
 
   // ---------- homework
-  const LS='homework-v1', COL='homework';
-  let items={}, store=null, period='week';
+  // students: постоянный список имён (порядок добавления); marks: отметка «ДЗ задано» на конкретную дату.
+  const LS_S='hw-students-v1', LS_M='hw-marks-v1', OLD='homework', MIG='hw-migrated-v1';
+  let students={}, marks={}, db=null, period='week';
   const pad=n=>String(n).padStart(2,'0');
   const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const today=()=>iso(new Date());
   const fmt=s=>{const [y,m,d]=s.split('-');return d+'.'+m+'.'+y.slice(2)};
   const wd=s=>['вс','пн','вт','ср','чт','пт','сб'][new Date(s+'T12:00').getDay()];
   const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function range(){
+  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  function rangeFor(p){
     const t=new Date(); t.setHours(12,0,0,0);
-    if(period==='week'){const m=new Date(t);m.setDate(t.getDate()-((t.getDay()+6)%7));const s=new Date(m);s.setDate(m.getDate()+6);return [iso(m),iso(s)]}
-    if(period==='month'){return [iso(new Date(t.getFullYear(),t.getMonth(),1)),iso(new Date(t.getFullYear(),t.getMonth()+1,0))]}
+    if(p==='week'){const m=new Date(t);m.setDate(t.getDate()-((t.getDay()+6)%7));const s=new Date(m);s.setDate(m.getDate()+6);return [iso(m),iso(s)]}
+    if(p==='month'){return [iso(new Date(t.getFullYear(),t.getMonth(),1)),iso(new Date(t.getFullYear(),t.getMonth()+1,0))]}
     let a=$('hwFrom').value, b=$('hwTo').value; if(a&&b&&a>b)[a,b]=[b,a]; return [a||'0000-01-01',b||'9999-12-31'];
   }
+  const range=()=>rangeFor(period);
+  const marksIn=(sid,a,b)=>Object.values(marks).filter(m=>m.sid===sid&&m.date>=a&&m.date<=b).sort((x,y)=>x.date.localeCompare(y.date));
+
   function render(){
     const [a,b]=range();
     $('hwLabel').textContent=(a>'0000-01-01'?fmt(a):'…')+' — '+(b<'9999-12-31'?fmt(b):'…');
-    const list=Object.values(items).filter(v=>v.date>=a&&v.date<=b).sort((x,y)=>y.date.localeCompare(x.date)||(y.ts||0)-(x.ts||0));
+    const list=Object.values(students).sort((x,y)=>(x.ts||0)-(y.ts||0));
     $('hwList').innerHTML='<div class="r h"><span>Имя</span><span>Дата</span><span>ДЗ задано</span><span></span></div>'+
-      (list.length?list.map(v=>`<div class="r${v.done?' done':''}">
+      (list.length?list.map(v=>{const ms=marksIn(v.id,a,b);return `<div class="r${ms.length?' done':''}">
         <span class="nm">${esc(v.name)}</span>
-        <span class="dt">${fmt(v.date)} <span style="color:var(--muted)">${wd(v.date)}</span></span>
-        <label class="ck"><input type="checkbox" data-id="${v.id}" ${v.done?'checked':''}><span>ДЗ задано</span></label>
+        <span class="dt">${ms.length?ms.map(m=>fmt(m.date)+' <span style="color:var(--muted)">'+wd(m.date)+'</span>').join('<br>'):'<span style="color:var(--muted)">—</span>'}</span>
+        <label class="ck"><input type="checkbox" data-id="${v.id}" ${ms.length?'checked':''}><span>ДЗ задано</span></label>
         <span class="act"><button class="rowbtn del" type="button" data-del="${v.id}">Удалить</button></span>
-      </div>`).join(''):'<div class="empty">За этот период записей нет.</div>');
+      </div>`}).join(''):'<div class="empty">Пока нет ни одного имени. Добавь первое выше.</div>');
   }
-  function lsLoad(){try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){return {}}}
-  function lsSave(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){}}
-  async function put(v){ if(store) await store.collection(COL).doc(v.id).set(v); else {items[v.id]=v;lsSave();render()} }
-  async function del(id){ if(store) await store.collection(COL).doc(id).delete(); else {delete items[id];lsSave();render()} }
+  // ---------- storage (Firestore или localStorage)
+  const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
+  const lsPut=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+  async function setDoc(col,v){
+    if(db) return db.collection(col).doc(v.id).set(v);
+    const m=col==='students'?students:marks; m[v.id]=v; lsPut(col==='students'?LS_S:LS_M,m); render();
+  }
+  async function delDoc(col,id){
+    if(db) return db.collection(col).doc(id).delete();
+    const m=col==='students'?students:marks; delete m[id]; lsPut(col==='students'?LS_S:LS_M,m); render();
+  }
   const fail=t=>{$('hwMsg').className='msg err';$('hwMsg').textContent=t};
 
   $('hwForm').addEventListener('submit',async ev=>{
     ev.preventDefault(); const name=$('hwName').value.trim();
     if(!name){fail('Впиши имя.');return}
-    const v={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,date:iso(new Date()),done:false,ts:Date.now()};
+    if(Object.values(students).some(s=>s.name.toLowerCase()===name.toLowerCase())){fail('«'+name+'» уже есть в списке.');return}
     $('hwAdd').disabled=true;
-    try{await put(v);$('hwName').value='';$('hwMsg').className='msg';$('hwMsg').textContent='Добавлено: '+name+', '+fmt(v.date)+'.'}
+    try{await setDoc('students',{id:uid(),name,ts:Date.now()});$('hwName').value='';$('hwMsg').className='msg';$('hwMsg').textContent='Добавлено: '+name+'.'}
     catch(e){fail('Не удалось сохранить. Проверь подключение и попробуй ещё раз.')}
     $('hwAdd').disabled=false; $('hwName').focus();
   });
   $('hwList').addEventListener('change',async ev=>{
-    const id=ev.target.dataset.id; if(!id||!items[id])return;
-    const v={...items[id],done:ev.target.checked};
-    try{await put(v)}catch(e){ev.target.checked=!ev.target.checked;fail('Не удалось сохранить отметку.')}
+    const sid=ev.target.dataset.id; if(!sid||!students[sid])return;
+    const [a,b]=range(), t=today();
+    try{
+      if(ev.target.checked){
+        const d=t<a?a:t>b?b:t;   // сегодня, если оно в выбранном периоде, иначе ближайший край периода
+        await setDoc('hwmarks',{id:sid+'_'+d,sid,date:d});
+      }else{
+        const ms=marksIn(sid,a,b);
+        if(ms.length>1&&!confirm('Снять все отметки за период ('+ms.length+')?')){ev.target.checked=true;return}
+        for(const m of ms) await delDoc('hwmarks',m.id);
+      }
+    }catch(e){ev.target.checked=!ev.target.checked;fail('Не удалось сохранить отметку.')}
   });
   $('hwList').addEventListener('click',async ev=>{
     const id=ev.target.dataset.del; if(!id)return;
-    if(!confirm('Удалить запись «'+items[id].name+'»?'))return;
-    try{await del(id)}catch(e){fail('Не удалось удалить запись.')}
+    if(!confirm('Удалить «'+students[id].name+'» из списка вместе с отметками?'))return;
+    try{ for(const m of Object.values(marks).filter(m=>m.sid===id)) await delDoc('hwmarks',m.id); await delDoc('students',id) }
+    catch(e){fail('Не удалось удалить.')}
   });
   $('hwPeriod').addEventListener('click',ev=>{
-    const p=ev.target.dataset.p; if(!p)return; period=p;
+    const p=ev.target.dataset.p; if(!p)return;
+    if(p==='custom'&&!$('hwFrom').value){const [a,b]=rangeFor('month');$('hwFrom').value=a;$('hwTo').value=b}
+    period=p;
     document.querySelectorAll('#hwPeriod button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));
     $('hwRange').hidden=p!=='custom';
-    if(p==='custom'&&!$('hwFrom').value){const [a,b]=(period='month',range());period='custom';$('hwFrom').value=a;$('hwTo').value=b}
     render();
   });
   ['hwFrom','hwTo'].forEach(i=>$(i).addEventListener('change',render));
 
+  // Старый формат (одна строка = имя + дата + галочка) переносится один раз в новый.
+  async function migrateOld(oldDocs){
+    try{ if(localStorage.getItem(MIG)) return }catch(e){return}
+    const byName={};
+    oldDocs.sort((x,y)=>(x.ts||0)-(y.ts||0)).forEach(o=>{
+      if(!o||!o.name) return;
+      const k=o.name.trim().toLowerCase();
+      let s=byName[k]||Object.values(students).find(x=>x.name.toLowerCase()===k);
+      if(!s){s={id:uid(),name:o.name.trim(),ts:o.ts||Date.now()};byName[k]=s}
+      byName[k]=s;
+      if(o.done&&o.date) s.marks=(s.marks||[]).concat(o.date);
+    });
+    for(const s of Object.values(byName)){
+      const ms=s.marks||[]; delete s.marks;
+      if(!students[s.id]) await setDoc('students',s);
+      for(const d of ms) await setDoc('hwmarks',{id:s.id+'_'+d,sid:s.id,date:d});
+    }
+    try{localStorage.setItem(MIG,'1')}catch(e){}
+  }
+
   render();
   (async()=>{
-    const db=await (window.appDb||Promise.resolve(null));
-    const local=()=>{store=null;items=lsLoad();render()};
-    if(!db){local();$('hwStatus').innerHTML='Сохраняется <b>только в этом браузере</b>';return}
-    store=db; $('hwStatus').innerHTML='Сохраняется <b>в общей базе</b>';
-    db.collection(COL).onSnapshot(snap=>{
-      const next={}; snap.docs.forEach(d=>{const v=d.data(); if(v&&v.id) next[v.id]=v}); items=next; render();
-    },err=>{local();$('hwStatus').innerHTML='Нет связи с базой — показаны записи <b>из этого браузера</b>'});
+    const store=await (window.appDb||Promise.resolve(null));
+    const local=t=>{db=null;students=lsGet(LS_S);marks=lsGet(LS_M);render();$('hwStatus').innerHTML=t||'Сохраняется <b>только в этом браузере</b>'};
+    if(!store){
+      local();
+      const old=Object.values(lsGet('homework-v1')); if(old.length) migrateOld(old);
+      return;
+    }
+    db=store; $('hwStatus').innerHTML='Сохраняется <b>в общей базе</b>';
+    const onErr=()=>local('Нет связи с базой — показаны записи <b>из этого браузера</b>');
+    let readyS=false, readyM=false, migrated=false;
+    const tryMigrate=()=>{
+      if(migrated||!readyS||!readyM) return; migrated=true;
+      const stop=db.collection(OLD).onSnapshot(snap=>{stop&&stop();const d=snap.docs.map(x=>x.data());if(d.length) migrateOld(d).catch(()=>{})},()=>{});
+    };
+    db.collection('students').onSnapshot(snap=>{const n={};snap.docs.forEach(d=>{const v=d.data();if(v&&v.id)n[v.id]=v});students=n;readyS=true;render();tryMigrate()},onErr);
+    db.collection('hwmarks').onSnapshot(snap=>{const n={};snap.docs.forEach(d=>{const v=d.data();if(v&&v.id)n[v.id]=v});marks=n;readyM=true;render();tryMigrate()},onErr);
   })();
 })();
 </script>
