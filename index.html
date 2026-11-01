@@ -388,9 +388,11 @@ table.hwgrid{min-width:0;width:auto;border-collapse:separate;border-spacing:0}
     })};
   }
   // Records saved earlier only in this browser are uploaded once; the browser copy is kept untouched.
+  // The browser copy wins over what is in the base for the same date (it has notes that a manual import lacks).
   async function migrateLocal(db,inDb){
     try{ if(localStorage.getItem(MIGRATED)) return }catch(e){return}
-    const local=lsLoad(), todo=Object.values(local).filter(v=>v&&v.date&&!inDb[v.date]);
+    const same=(a,b)=>JSON.stringify(a,Object.keys(a).sort())===JSON.stringify(b,Object.keys(b).sort());
+    const local=lsLoad(), todo=Object.values(local).filter(v=>v&&v.date&&!(inDb[v.date]&&same(v,inDb[v.date])));
     for(const v of todo) await db.collection('nights').doc(v.date).set(v);
     try{localStorage.setItem(MIGRATED,new Date().toISOString())}catch(e){}
   }
