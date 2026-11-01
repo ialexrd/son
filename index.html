@@ -57,10 +57,6 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .btn.ghost{background:transparent;color:var(--text);border-color:var(--line);font-weight:500}
 .msg{font-size:14px;color:var(--good)}
 .msg.err{color:var(--accent)}
-.login{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 24px}
-.login[hidden]{display:none}
-.login .field{flex:1 1 200px}
-.linkbtn{font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:0 0 0 8px}
 
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .stat{background:var(--paper);padding:16px}
@@ -127,14 +123,8 @@ td.date{color:var(--ink);font-weight:600}
   <section aria-labelledby="formTitle" style="display:flex;flex-direction:column;gap:16px">
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
       <h2 id="formTitle">Сегодняшнее утро</h2>
-      <span class="status"><span id="status">Подключаю хранилище…</span><button class="linkbtn" type="button" id="logout" hidden>Выйти</button></span>
+      <span class="status" id="status">Подключаю хранилище…</span>
     </div>
-    <form class="login" id="login" hidden novalidate>
-      <div class="field"><label for="lemail">Почта</label><input id="lemail" type="email" autocomplete="username" required></div>
-      <div class="field"><label for="lpass">Пароль</label><input id="lpass" type="password" autocomplete="current-password" required></div>
-      <button class="btn" type="submit" id="lbtn">Войти</button>
-      <span class="msg err" id="lmsg" role="status" style="flex-basis:100%"></span>
-    </form>
     <form id="f" novalidate>
       <div class="field full">
         <label for="date">Дата <small>(утро, когда заполняешь)</small></label>
@@ -311,19 +301,12 @@ td.date{color:var(--ink);font-weight:600}
   async function firebaseStore(){
     const base='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
     const {initializeApp}=await import(base+'firebase-app.js');
-    const [fs,au]=await Promise.all([import(base+'firebase-firestore.js'),import(base+'firebase-auth.js')]);
-    const app=initializeApp(FB_CFG), db=fs.getFirestore(app), auth=au.getAuth(app);
-    return {
-      auth:{
-        onChange:cb=>au.onAuthStateChanged(auth,cb),
-        signIn:(e,p)=>au.signInWithEmailAndPassword(auth,e,p),
-        signOut:()=>au.signOut(auth)
-      },
-      collection:name=>({
-        doc:id=>({set:v=>fs.setDoc(fs.doc(db,name,id),v),delete:()=>fs.deleteDoc(fs.doc(db,name,id))}),
-        onSnapshot:(ok,err)=>fs.onSnapshot(fs.collection(db,name),s=>ok({docs:s.docs.map(d=>({data:()=>d.data()}))}),err)
-      })
-    };
+    const fs=await import(base+'firebase-firestore.js');
+    const db=fs.getFirestore(initializeApp(FB_CFG));
+    return {collection:name=>({
+      doc:id=>({set:v=>fs.setDoc(fs.doc(db,name,id),v),delete:()=>fs.deleteDoc(fs.doc(db,name,id))}),
+      onSnapshot:(ok,err)=>fs.onSnapshot(fs.collection(db,name),s=>ok({docs:s.docs.map(d=>({data:()=>d.data()}))}),err)
+    })};
   }
   // Records saved earlier only in this browser are uploaded once; the browser copy is kept untouched.
   async function migrateLocal(db,inDb){
@@ -332,44 +315,27 @@ td.date{color:var(--ink);font-weight:600}
     for(const v of todo) await db.collection('nights').doc(v.date).set(v);
     try{localStorage.setItem(MIGRATED,new Date().toISOString())}catch(e){}
   }
-  function useLocal(text){
-    store=null; entries=lsLoad(); render();
-    $('status').innerHTML=text||'Сохраняется <b>только в этом браузере</b>';
-  }
-  function listen(db){
+
+  (async()=>{
+    let db=null;
+    try{ db=await firebaseStore() }catch(e){db=null}
+    if(!db){ try{ db=window.claude&&window.claude.use?await window.claude.use('db'):null }catch(e){db=null} }
+    if(!db){
+      entries=lsLoad(); render();
+      $('status').innerHTML='Сохраняется <b>только в этом браузере</b>';
+      return;
+    }
     store=db;
     $('status').innerHTML='Сохраняется <b>в общей базе</b>';
     let first=true;
-    return db.collection('nights').onSnapshot(snap=>{
+    db.collection('nights').onSnapshot(snap=>{
       const next={}; snap.docs.forEach(d=>{const v=d.data(); if(v&&v.date) next[v.date]=v});
       entries=next; render();
       if(first){first=false; migrateLocal(db,next).catch(()=>{$('status').textContent='Не удалось перенести старые записи из браузера — обнови страницу.'})}
-    },err=>useLocal('Нет связи с базой — показаны записи <b>из этого браузера</b>'));
-  }
-
-  (async()=>{
-    let fb=null;
-    try{ fb=await firebaseStore() }catch(e){fb=null}
-    if(fb){
-      let stop=null;
-      fb.auth.onChange(user=>{
-        if(stop){stop();stop=null}
-        $('login').hidden=!!user; $('logout').hidden=!user;
-        if(user){ stop=listen(fb) }
-        else useLocal('Войди, чтобы записи сохранялись в базе. Пока — <b>только в этом браузере</b>');
-      });
-      $('login').addEventListener('submit',async ev=>{
-        ev.preventDefault(); const m=$('lmsg'); m.textContent=''; $('lbtn').disabled=true;
-        try{ await fb.auth.signIn($('lemail').value.trim(),$('lpass').value); $('lpass').value='' }
-        catch(err){ m.textContent=err&&/invalid|wrong|not-found|user/.test(err.code||'')?'Неверная почта или пароль.':'Не удалось войти. Проверь подключение.' }
-        $('lbtn').disabled=false;
-      });
-      $('logout').onclick=()=>fb.auth.signOut();
-      return;
-    }
-    let db=null;
-    try{ db=window.claude&&window.claude.use?await window.claude.use('db'):null }catch(e){db=null}
-    if(db) listen(db); else useLocal();
+    },err=>{
+      store=null; entries=lsLoad(); render();
+      $('status').innerHTML='Нет связи с базой — показаны записи <b>из этого браузера</b>';
+    });
   })();
 })();
 </script>
