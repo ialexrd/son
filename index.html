@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Дневник сна</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23E8559A' d='M16 29s-12.5-7.6-12.5-16.1C3.5 8.2 7 5 10.9 5c2.3 0 4 1.1 5.1 2.8C17.1 6.1 18.8 5 21.1 5 25 5 28.5 8.2 28.5 12.9 28.5 21.4 16 29 16 29z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -388,9 +389,11 @@ table.hwgrid{min-width:0;width:auto;border-collapse:separate;border-spacing:0}
     })};
   }
   // Records saved earlier only in this browser are uploaded once; the browser copy is kept untouched.
+  // The browser copy wins over what is in the base for the same date (it has notes that a manual import lacks).
   async function migrateLocal(db,inDb){
     try{ if(localStorage.getItem(MIGRATED)) return }catch(e){return}
-    const local=lsLoad(), todo=Object.values(local).filter(v=>v&&v.date&&!inDb[v.date]);
+    const same=(a,b)=>JSON.stringify(a,Object.keys(a).sort())===JSON.stringify(b,Object.keys(b).sort());
+    const local=lsLoad(), todo=Object.values(local).filter(v=>v&&v.date&&!(inDb[v.date]&&same(v,inDb[v.date])));
     for(const v of todo) await db.collection('nights').doc(v.date).set(v);
     try{localStorage.setItem(MIGRATED,new Date().toISOString())}catch(e){}
   }
