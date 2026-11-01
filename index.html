@@ -92,21 +92,21 @@ td.date{color:var(--ink);font-weight:600}
   .actions .btn{flex:1 1 auto}
   /* log becomes a stack of cards */
   .tablebox{border:0;background:none;overflow:visible}
-  table{min-width:0}
-  thead{display:none}
-  table,tbody,tr,td{display:block;width:auto}
-  tbody{display:flex;flex-direction:column;gap:12px}
-  tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;background:var(--paper);
+  .tablebox table{min-width:0}
+  .tablebox thead{display:none}
+  .tablebox table,.tablebox tbody,.tablebox tr,.tablebox td{display:block;width:auto}
+  .tablebox tbody{display:flex;flex-direction:column;gap:12px}
+  .tablebox tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;background:var(--paper);
     border:1px solid var(--line);border-radius:6px;padding:14px}
-  td{border:0;padding:0;white-space:normal;font-size:14px}
-  td[data-l]::before{content:attr(data-l);display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-  td.date{grid-column:1/-1;font-size:16px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-  th.calc,td.calc{background:none}
-  td.calc{color:var(--ink);font-weight:600}
-  td.act{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--line)}
-  td.act:empty{display:none}
-  td.empty{grid-column:1/-1;padding:0}
-  tbody tr.emptyrow{display:block;background:none;border:0;padding:4px 0}
+  .tablebox td{border:0;padding:0;white-space:normal;font-size:14px}
+  .tablebox td[data-l]::before{content:attr(data-l);display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  .tablebox td.date{grid-column:1/-1;font-size:16px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .tablebox th.calc,.tablebox td.calc{background:none}
+  .tablebox td.calc{color:var(--ink);font-weight:600}
+  .tablebox td.act{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--line)}
+  .tablebox td.act:empty{display:none}
+  .tablebox td.empty{grid-column:1/-1;padding:0}
+  .tablebox tbody tr.emptyrow{display:block;background:none;border:0;padding:4px 0}
 }
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:-16px;overflow-x:auto}
 .tabs button{font:inherit;font-size:15px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);
@@ -121,24 +121,34 @@ td.date{color:var(--ink);font-weight:600}
 .bar .range{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
 .bar .range[hidden]{display:none}
 .bar .range input{width:auto}
-.addrow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px 24px}
-.addrow .field{flex:1 1 220px}
-.hw{border:1px solid var(--line);border-radius:6px;background:var(--paper);overflow:hidden}
-.hw .r{display:grid;grid-template-columns:minmax(0,1fr) 130px 110px 72px;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:15px}
-.hw .r:last-child{border-bottom:0}
-.hw .h{font-size:12px;color:var(--muted);padding-block:10px}
-.hw .nm{color:var(--ink);overflow-wrap:anywhere}
-.hw .dt{font-variant-numeric:tabular-nums;color:var(--text)}
-.hw label.ck{display:flex;align-items:center;gap:8px;cursor:pointer}
-.hw input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);margin:0}
-.hw .done .nm{color:var(--muted)}
+.hwhead{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px 24px}
+form.addmini{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;max-width:360px;background:none;border:0;border-radius:0;padding:0;margin-top:8px}
+.addmini input{width:180px;padding:8px 10px}
+.addmini .btn{padding:8px 16px}
+.addmini .msg{flex-basis:100%;text-align:right;font-size:13px;min-height:0}
+.addmini .msg:empty{display:none}
+.gridbox{width:fit-content;max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+table.hwgrid{min-width:0;width:auto;border-collapse:separate;border-spacing:0}
+.hwgrid th,.hwgrid td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.hwgrid tr:last-child td{border-bottom:0}
+.hwgrid th{font-size:12px;color:var(--muted);font-weight:500;line-height:1.3;vertical-align:bottom}
+.hwgrid th b{display:block;font-size:14px;color:var(--ink);font-weight:600}
+.hwgrid th.today b{color:var(--accent)}
+.hwgrid th.we,.hwgrid td.we{background:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+.hwgrid .nm{text-align:left;position:sticky;left:0;background:var(--paper);z-index:1;min-width:120px;max-width:220px;
+  white-space:normal;overflow-wrap:anywhere;color:var(--ink);border-right:1px solid var(--line)}
+.hwgrid th.nm{color:var(--muted)}
+.hwgrid td.nm .x{float:right;margin-left:6px}
+.hwgrid input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);margin:0;cursor:pointer}
+.hwgrid .x{font:inherit;font-size:16px;line-height:1;background:none;border:0;color:var(--muted);cursor:pointer;padding:2px 4px;opacity:.6}
+.hwgrid .x:hover{opacity:1;color:var(--accent)}
+.hwgrid td.cnt{color:var(--muted);font-size:13px}
 @media (max-width:560px){
-  .hw .r{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
-  .hw .h{display:none}
-  .hw .dt{grid-row:2;font-size:13px;color:var(--muted)}
-  .hw label.ck{grid-row:1/3;grid-column:2}
-  .hw .ck span{display:none}
-  .hw .act{grid-row:3;grid-column:1/-1;justify-self:end}
+  .hwhead{flex-direction:column}
+  form.addmini{justify-content:flex-start;max-width:none;margin-top:0;padding:0;flex-wrap:wrap}
+  .addmini input{flex:1 1 140px;width:auto}
+  .addmini .msg{text-align:left}
+  #hwStatus{margin-left:0!important}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -216,23 +226,18 @@ td.date{color:var(--ink);font-weight:600}
   </div>
 
   <div class="panel" id="tab-hw" role="tabpanel" aria-labelledby="t-hw" hidden>
-    <header>
-      <h1>Домашние работы</h1>
-      <div class="rule"></div>
-    </header>
-    <section aria-labelledby="hwAddTitle" style="display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-        <h2 id="hwAddTitle">Добавить имя</h2>
-        <span class="status" id="hwStatus">Подключаю хранилище…</span>
+    <header class="hwhead">
+      <div>
+        <h1>Домашние работы</h1>
+        <div class="rule"></div>
       </div>
-      <form class="addrow" id="hwForm" novalidate>
-        <div class="field"><label for="hwName">Имя</label><input id="hwName" autocomplete="off" maxlength="80"></div>
+      <form class="addmini" id="hwForm" novalidate>
+        <input id="hwName" autocomplete="off" maxlength="80" placeholder="Имя" aria-label="Имя">
         <button class="btn" type="submit" id="hwAdd">Добавить</button>
-        <span class="msg" id="hwMsg" role="status" style="flex-basis:100%"></span>
+        <span class="msg" id="hwMsg" role="status"></span>
       </form>
-    </section>
-    <section aria-labelledby="hwListTitle" style="display:flex;flex-direction:column;gap:16px">
-      <h2 id="hwListTitle">Список</h2>
+    </header>
+    <section aria-label="Отметки «ДЗ задано»" style="display:flex;flex-direction:column;gap:16px">
       <div class="bar">
         <div class="seg" id="hwPeriod">
           <button type="button" data-p="week" aria-pressed="true">Эта неделя</button>
@@ -244,8 +249,10 @@ td.date{color:var(--ink);font-weight:600}
           <label for="hwTo">по</label><input type="date" id="hwTo">
         </div>
         <span class="status" id="hwLabel"></span>
+        <span class="status" id="hwStatus" style="margin-left:auto">Подключаю хранилище…</span>
       </div>
-      <div class="hw" id="hwList"></div>
+      <div class="gridbox"><table class="hwgrid" id="hwList"></table></div>
+      <p class="note" style="margin:0">Галочка в клетке — «ДЗ задано» в этот день.</p>
     </section>
   </div>
 </div>
@@ -446,19 +453,24 @@ td.date{color:var(--ink);font-weight:600}
     let a=$('hwFrom').value, b=$('hwTo').value; if(a&&b&&a>b)[a,b]=[b,a]; return [a||'0000-01-01',b||'9999-12-31'];
   }
   const range=()=>rangeFor(period);
-  const marksIn=(sid,a,b)=>Object.values(marks).filter(m=>m.sid===sid&&m.date>=a&&m.date<=b).sort((x,y)=>x.date.localeCompare(y.date));
 
+  function days(a,b){
+    const out=[]; if(a<'1900'||b>'9000') return out;
+    const d=new Date(a+'T12:00'), e=new Date(b+'T12:00');
+    while(d<=e&&out.length<92){out.push(iso(d));d.setDate(d.getDate()+1)}
+    return out;
+  }
   function render(){
-    const [a,b]=range();
-    $('hwLabel').textContent=(a>'0000-01-01'?fmt(a):'…')+' — '+(b<'9999-12-31'?fmt(b):'…');
+    let [a,b]=range();
+    if(period==='custom'&&(a<'1900'||b>'9000')){a=b=''}
+    $('hwLabel').textContent=a?fmt(a)+' — '+fmt(b):'выбери даты';
+    const ds=days(a,b), t=today(), we=d=>{const w=new Date(d+'T12:00').getDay();return w===0||w===6};
     const list=Object.values(students).sort((x,y)=>(x.ts||0)-(y.ts||0));
-    $('hwList').innerHTML='<div class="r h"><span>Имя</span><span>Дата</span><span>ДЗ задано</span><span></span></div>'+
-      (list.length?list.map(v=>{const ms=marksIn(v.id,a,b);return `<div class="r${ms.length?' done':''}">
-        <span class="nm">${esc(v.name)}</span>
-        <span class="dt">${ms.length?ms.map(m=>fmt(m.date)+' <span style="color:var(--muted)">'+wd(m.date)+'</span>').join('<br>'):'<span style="color:var(--muted)">—</span>'}</span>
-        <label class="ck"><input type="checkbox" data-id="${v.id}" ${ms.length?'checked':''}><span>ДЗ задано</span></label>
-        <span class="act"><button class="rowbtn del" type="button" data-del="${v.id}">Удалить</button></span>
-      </div>`}).join(''):'<div class="empty">Пока нет ни одного имени. Добавь первое выше.</div>');
+    const head='<thead><tr><th class="nm">Имя</th>'+ds.map(d=>`<th class="${d===t?'today':''}${we(d)?' we':''}">${wd(d)}<b>${d.slice(8)}.${d.slice(5,7)}</b></th>`).join('')+'<th>Всего</th></tr></thead>';
+    const body=list.length?list.map(v=>{let n=0;return `<tr><td class="nm"><span>${esc(v.name)}</span><button class="x" type="button" data-del="${v.id}" title="Удалить" aria-label="Удалить ${esc(v.name)}">×</button></td>`+
+      ds.map(d=>{const on=!!marks[v.id+'_'+d]; if(on)n++; return `<td class="${we(d)?'we':''}"><input type="checkbox" data-id="${v.id}" data-d="${d}" ${on?'checked':''} aria-label="${esc(v.name)}, ${fmt(d)}: ДЗ задано"></td>`}).join('')+
+      `<td class="cnt">${n}</td></tr>`}).join(''):`<tr><td class="nm" style="color:var(--muted)">Добавь первое имя справа вверху.</td>${ds.map(()=>'<td></td>').join('')}<td></td></tr>`;
+    $('hwList').innerHTML=head+'<tbody>'+body+'</tbody>';
   }
   // ---------- storage (Firestore или localStorage)
   const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
@@ -483,18 +495,10 @@ td.date{color:var(--ink);font-weight:600}
     $('hwAdd').disabled=false; $('hwName').focus();
   });
   $('hwList').addEventListener('change',async ev=>{
-    const sid=ev.target.dataset.id; if(!sid||!students[sid])return;
-    const [a,b]=range(), t=today();
-    try{
-      if(ev.target.checked){
-        const d=t<a?a:t>b?b:t;   // сегодня, если оно в выбранном периоде, иначе ближайший край периода
-        await setDoc('hwmarks',{id:sid+'_'+d,sid,date:d});
-      }else{
-        const ms=marksIn(sid,a,b);
-        if(ms.length>1&&!confirm('Снять все отметки за период ('+ms.length+')?')){ev.target.checked=true;return}
-        for(const m of ms) await delDoc('hwmarks',m.id);
-      }
-    }catch(e){ev.target.checked=!ev.target.checked;fail('Не удалось сохранить отметку.')}
+    const sid=ev.target.dataset.id, d=ev.target.dataset.d; if(!sid||!d||!students[sid])return;
+    const id=sid+'_'+d;
+    try{ if(ev.target.checked) await setDoc('hwmarks',{id,sid,date:d}); else await delDoc('hwmarks',id) }
+    catch(e){ev.target.checked=!ev.target.checked;fail('Не удалось сохранить отметку.')}
   });
   $('hwList').addEventListener('click',async ev=>{
     const id=ev.target.dataset.del; if(!id)return;
