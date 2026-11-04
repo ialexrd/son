@@ -109,9 +109,9 @@ td.date{color:var(--ink);font-weight:600}
   .tablebox td.empty{grid-column:1/-1;padding:0}
   .tablebox tbody tr.emptyrow{display:block;background:none;border:0;padding:4px 0}
 }
-/* Боковое меню: розовая плашка справа, сверху название «планер»; на узком экране — полоса сверху */
-.app{display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:32px;align-items:start;max-width:1600px;margin:0 auto}
-.side{position:sticky;top:24px;background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:28px 14px;display:flex;flex-direction:column;gap:22px;min-height:min(560px,calc(100vh - 48px))}
+/* Боковое меню: розовая плашка слева во всю высоту экрана, сверху название «планер»; на узком экране — полоса сверху */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);gap:32px;align-items:start;max-width:1600px;margin:0 auto}
+.side{order:-1;position:sticky;top:40px;height:calc(100vh - 80px);height:calc(100dvh - 80px);background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:28px 14px;display:flex;flex-direction:column;gap:22px;overflow:auto}
 .logo{font-family:var(--display);font-size:30px;line-height:1;padding-inline:12px;display:flex;align-items:center;gap:8px}
 .logo i{width:10px;height:10px;border-radius:50%;background:var(--accent-ink);display:inline-block;margin-top:8px}
 .side nav{display:grid;gap:4px}
@@ -122,7 +122,7 @@ td.date{color:var(--ink);font-weight:600}
 .side svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:24px}
-  .side{order:-1;position:static;min-height:0;padding:16px 10px 10px;gap:10px}
+  .side{position:static;height:auto;padding:16px 10px 10px;gap:10px}
   .logo{font-size:24px;padding-inline:8px}
   .logo i{margin-top:5px}
   .side nav{display:flex;flex-wrap:wrap;gap:4px}
