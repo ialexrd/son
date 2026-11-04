@@ -110,15 +110,18 @@ td.date{color:var(--ink);font-weight:600}
   .tablebox tbody tr.emptyrow{display:block;background:none;border:0;padding:4px 0}
 }
 /* Боковое меню: розовая плашка слева во всю высоту экрана, сверху название «планер»; на узком экране — полоса сверху */
+:root{--side-bg:#F9DCE8;--side-ink:#5A2A42;--side-on-bg:#FFFFFF;--side-on-ink:#C2457A;--side-dot:#E0528A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--side-bg:#3B2634;--side-ink:#F3D9E5;--side-on-bg:#F4C3D7;--side-on-ink:#2A1020;--side-dot:#F4C3D7}}
+:root[data-theme="dark"]{--side-bg:#3B2634;--side-ink:#F3D9E5;--side-on-bg:#F4C3D7;--side-on-ink:#2A1020;--side-dot:#F4C3D7}
 .app{display:grid;grid-template-columns:232px minmax(0,1fr);gap:32px;align-items:start;max-width:1600px;margin:0 auto}
-.side{order:-1;position:sticky;top:40px;height:calc(100vh - 80px);height:calc(100dvh - 80px);background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:28px 14px;display:flex;flex-direction:column;gap:22px;overflow:auto}
+.side{order:-1;position:sticky;top:40px;height:calc(100vh - 80px);height:calc(100dvh - 80px);background:var(--side-bg);color:var(--side-ink);border-radius:16px;padding:28px 14px;display:flex;flex-direction:column;gap:22px;overflow:auto}
 .logo{font-family:var(--display);font-size:30px;line-height:1;padding-inline:12px;display:flex;align-items:center;gap:8px}
-.logo i{width:10px;height:10px;border-radius:50%;background:var(--accent-ink);display:inline-block;margin-top:8px}
+.logo i{width:10px;height:10px;border-radius:50%;background:var(--side-dot);display:inline-block;margin-top:8px}
 .side nav{display:grid;gap:4px}
 .side nav button{font:inherit;font-size:15px;display:flex;align-items:center;gap:12px;background:none;border:0;color:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left;position:relative;white-space:nowrap}
-.side nav button:hover{background:color-mix(in srgb,var(--accent-ink) 12%,transparent)}
-.side nav button[aria-selected="true"]{background:var(--accent-ink);color:var(--accent);font-weight:600}
-.side nav button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.side nav button:hover{background:color-mix(in srgb,var(--side-on-bg) 55%,transparent)}
+.side nav button[aria-selected="true"]{background:var(--side-on-bg);color:var(--side-on-ink);font-weight:600}
+.side nav button:focus-visible{outline:2px solid var(--side-on-ink);outline-offset:2px}
 .side svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr);gap:24px}
