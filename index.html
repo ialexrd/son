@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Дневник сна</title>
+<title>Планер</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23E8559A' d='M16 29s-12.5-7.6-12.5-16.1C3.5 8.2 7 5 10.9 5c2.3 0 4 1.1 5.1 2.8C17.1 6.1 18.8 5 21.1 5 25 5 28.5 8.2 28.5 12.9 28.5 21.4 16 29 16 29z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,10 +109,25 @@ td.date{color:var(--ink);font-weight:600}
   .tablebox td.empty{grid-column:1/-1;padding:0}
   .tablebox tbody tr.emptyrow{display:block;background:none;border:0;padding:4px 0}
 }
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:-16px;overflow-x:auto}
-.tabs button{font:inherit;font-size:15px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);
-  padding:10px 14px;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
-.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+/* Боковое меню: розовая плашка справа, сверху название «планер»; на узком экране — полоса сверху */
+.app{display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:32px;align-items:start;max-width:1600px;margin:0 auto}
+.side{position:sticky;top:24px;background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:28px 14px;display:flex;flex-direction:column;gap:22px;min-height:min(560px,calc(100vh - 48px))}
+.logo{font-family:var(--display);font-size:30px;line-height:1;padding-inline:12px;display:flex;align-items:center;gap:8px}
+.logo i{width:10px;height:10px;border-radius:50%;background:var(--accent-ink);display:inline-block;margin-top:8px}
+.side nav{display:grid;gap:4px}
+.side nav button{font:inherit;font-size:15px;display:flex;align-items:center;gap:12px;background:none;border:0;color:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left;position:relative;white-space:nowrap}
+.side nav button:hover{background:color-mix(in srgb,var(--accent-ink) 12%,transparent)}
+.side nav button[aria-selected="true"]{background:var(--accent-ink);color:var(--accent);font-weight:600}
+.side nav button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.side svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);gap:24px}
+  .side{order:-1;position:static;min-height:0;padding:16px 10px 10px;gap:10px}
+  .logo{font-size:24px;padding-inline:8px}
+  .logo i{margin-top:5px}
+  .side nav{display:flex;flex-wrap:wrap;gap:4px}
+  .side nav button{padding:8px 10px;font-size:14px;gap:8px}
+}
 .panel{display:flex;flex-direction:column;gap:40px}
 .panel[hidden]{display:none}
 .seg{display:inline-flex;flex-wrap:wrap;gap:8px}
@@ -259,12 +274,8 @@ form.pl-addtop{display:flex;gap:8px;grid-template-columns:none;background:none;b
 
 </head>
 <body>
+<div class="app">
 <div class="wrap">
-  <nav class="tabs" role="tablist" aria-label="Разделы">
-    <button role="tab" id="t-sleep" aria-controls="tab-sleep" aria-selected="true">Дневник сна</button>
-    <button role="tab" id="t-hw" aria-controls="tab-hw" aria-selected="false">Домашние работы</button>
-    <button role="tab" id="t-pl" aria-controls="tab-pl" aria-selected="false">Планер</button>
-  </nav>
   <div class="panel" id="tab-sleep" role="tabpanel" aria-labelledby="t-sleep">
   <header>
     <h1>Дневник сна</h1>
@@ -389,6 +400,20 @@ form.pl-addtop{display:flex;gap:8px;grid-template-columns:none;background:none;b
     </section>
   </div>
 </div>
+  <aside class="side">
+    <div class="logo">планер<i></i></div>
+    <nav role="tablist" aria-label="Разделы" aria-orientation="vertical">
+      <button role="tab" id="t-sleep" aria-controls="tab-sleep" aria-selected="true"><svg><use href="#sd-i-moon"/></svg>Дневник сна</button>
+      <button role="tab" id="t-hw" aria-controls="tab-hw" aria-selected="false"><svg><use href="#sd-i-book"/></svg>Домашние работы</button>
+      <button role="tab" id="t-pl" aria-controls="tab-pl" aria-selected="false"><svg><use href="#sd-i-cal"/></svg>Планер</button>
+    </nav>
+  </aside>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="sd-i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="sd-i-book" viewBox="0 0 24 24"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/></symbol>
+  <symbol id="sd-i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+</svg>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="pl-i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
